@@ -9,7 +9,7 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import bg from "/images/border.jpg";
+import bg from "../../assets/images/about-bg.jpg";
 import AnimatedUnderline from "../AnimatedUnderline/AnimatedUnderline";
 import { fetchCachedJson } from "../../lib/api";
 import { getOptimizedImage } from "../../lib/media";

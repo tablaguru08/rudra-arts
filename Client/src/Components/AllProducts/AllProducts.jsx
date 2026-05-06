@@ -4,7 +4,7 @@ import { FaHeart, FaRegHeart, FaStar, FaSearch, FaTimes } from "react-icons/fa";
 import { ShoppingCart, Filter, Grid, Layout, Sliders } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AutoScrollCarousel from "./Carousel";
-import aboutBg from "/images/border.jpg";
+import aboutBg from "../../assets/images/about-bg.jpg";
 import { Skeleton } from "@mui/material";
 import AnimatedUnderline from "../AnimatedUnderline/AnimatedUnderline";
 import { useMemo } from "react";

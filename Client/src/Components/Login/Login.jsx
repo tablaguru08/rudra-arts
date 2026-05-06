@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import loginImg from "/images/fort8.jpg";
+import loginImg from "../../assets/images/loginBg.jpg";
 
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);

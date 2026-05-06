@@ -4,7 +4,7 @@ import { FiMenu, FiX, FiChevronDown } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../Contexts/Contexts";
 import { FaShoppingCart, FaBoxOpen } from "react-icons/fa";
-import logo from "/images/rudra_arts_logo_single.png";
+import logo from "../../assets/images/rudra_arts_logo_single.png";
 import { useMediaQuery } from "react-responsive";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
