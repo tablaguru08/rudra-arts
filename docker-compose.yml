@@ -8,7 +8,7 @@ services:
       - ./Server/.env
     environment:
       PORT: 5000
-      FRONTEND_ORIGINS: http://localhost,https://www.rudraartsandhandicrafts.in,https://rudraartsandhandicrafts.in
+      FRONTEND_ORIGINS: http://localhost,http://www.rudraartsandhandicrafts.in,http://rudraartsandhandicrafts.in,https://www.rudraartsandhandicrafts.in,https://rudraartsandhandicrafts.in
     expose:
       - "5000"
 
