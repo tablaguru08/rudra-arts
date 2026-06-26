@@ -14,6 +14,31 @@ import {
   FiShare2,
 } from "react-icons/fi";
 
+const normalizeProduct = (rawProduct) => {
+  if (!rawProduct) return null;
+
+  return {
+    ...rawProduct,
+    _id: String(rawProduct._id ?? rawProduct.id ?? ""),
+    product_name: rawProduct.product_name || rawProduct.name || "",
+    product_price: Number(rawProduct.product_price ?? rawProduct.price) || 0,
+    product_size: rawProduct.product_size || rawProduct.size || "0",
+    product_description:
+      rawProduct.product_description || rawProduct.description || "",
+    product_category:
+      rawProduct.product_category || rawProduct.category || "Uncategorized",
+    product_discount:
+      Number(rawProduct.product_discount ?? rawProduct.discount) || 0,
+    product_image: Array.isArray(rawProduct.product_image)
+      ? rawProduct.product_image
+      : [],
+    inStock:
+      typeof rawProduct.inStock === "boolean"
+        ? rawProduct.inStock
+        : Number(rawProduct.quantity ?? 0) > 0,
+  };
+};
+
 const ProductDetails = () => {
   useEffect(() => {
     window.scrollTo({
@@ -42,11 +67,14 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       const cachedProducts = getCachedData("products:list");
-      const cachedProduct = cachedProducts?.find((item) => item._id === id);
+      const cachedProduct = cachedProducts?.find(
+        (item) => String(item._id ?? item.id) === String(id),
+      );
 
       if (cachedProduct) {
-        setProduct(cachedProduct);
-        setSelectedImage(cachedProduct.product_image?.[0] || null);
+        const normalizedProduct = normalizeProduct(cachedProduct);
+        setProduct(normalizedProduct);
+        setSelectedImage(normalizedProduct.product_image?.[0] || null);
         setLoading(false);
         return;
       }
@@ -56,9 +84,10 @@ const ProductDetails = () => {
           cacheKey: `product:${id}`,
           ttlMs: 5 * 60 * 1000,
         });
-        setProduct(data);
-        setCachedData(`product:${id}`, data);
-        setSelectedImage(data.product_image?.[0]);
+        const normalizedProduct = normalizeProduct(data);
+        setProduct(normalizedProduct);
+        setCachedData(`product:${id}`, normalizedProduct);
+        setSelectedImage(normalizedProduct.product_image?.[0]);
       } catch (err) {
         console.error(err);
       } finally {
@@ -67,6 +96,8 @@ const ProductDetails = () => {
     };
     fetchProduct();
   }, [id]);
+
+  console.log(product, "Product");
 
   const handleNextImage = () => {
     if (!product?.product_image) return;
@@ -398,9 +429,10 @@ const ProductDetails = () => {
                   whileHover={{ scale: 1.03 }}
                   transition={{ type: "spring", stiffness: 300 }}
                   onClick={() => handleAddToCart(product)}
-                  className="w-50 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300 shadow-md hover:shadow-lg"
+                  disabled={!product.inStock}
+                  className="w-50 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300 shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-400"
                 >
-                  Add to cart
+                  {product.inStock ? "Add to cart" : "Out of stock"}
                 </motion.button>
 
                 {/* Share Button */}

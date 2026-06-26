@@ -13,12 +13,14 @@ import productRoutes from "./routes/products.js";
 import newsRoutes from "./routes/news.js";
 import blogRoutes from "./routes/blog.js";
 import checkoutRoutes from "./routes/checkoutRoute.js";
+import orderRoutes from "./routes/orders.js";
 
 dotenv.config();
 
 const app = express();
 
 const allowedOrigins = [
+  "https://management.rudraartsandhandicrafts.in", // your production admin panel
   "https://www.rudraartsandhandicrafts.in", // your production frontend
   "https://rudraartsandhandicrafts.in", // your production frontend
   "http://localhost:5173", // your local frontend
@@ -70,6 +72,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/checkout", checkoutRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.get("/", (req, res) => {
   res.send("Rudra Arts API running with MongoDB");

@@ -9,6 +9,8 @@ import {
 } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { buildApiUrl } from "../../lib/api";
+import { formatOrderPrice, saveStoredCodOrder } from "../../lib/orders";
 
 const Cart = () => {
   const {
@@ -21,24 +23,38 @@ const Cart = () => {
   } = useCart();
 
   const [isBuying, setIsBuying] = useState(false);
+  const [customer, setCustomer] = useState({
+    fullName: "",
+    phone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
+  const [formError, setFormError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const savePurchasedProducts = (products) => {
+  const savePurchasedProducts = (products, order) => {
     try {
       const existingProducts =
         JSON.parse(localStorage.getItem("purchasedProducts")) || [];
       const newProducts = products.map((product) => ({
         ...product,
-        purchaseDate: new Date().toISOString(),
+        purchaseDate: order.createdAt || new Date().toISOString(),
+        orderCode: order.orderCode,
+        trackingCode: order.trackingCode,
+        orderStatus: order.orderStatus,
       }));
       localStorage.setItem(
         "purchasedProducts",
         JSON.stringify([...existingProducts, ...newProducts])
       );
+      window.dispatchEvent(new Event("purchasedProductsUpdated"));
       return true;
     } catch (error) {
       console.error("Failed to save purchased products:", error);
@@ -47,89 +63,93 @@ const Cart = () => {
   };
 
   const handleBuyAll = async () => {
+    const trimmedCustomer = {
+      fullName: customer.fullName.trim(),
+      phone: customer.phone.trim(),
+      addressLine1: customer.addressLine1.trim(),
+      addressLine2: customer.addressLine2.trim(),
+      city: customer.city.trim(),
+      state: customer.state.trim(),
+      pincode: customer.pincode.trim(),
+    };
+
+    if (!trimmedCustomer.fullName) {
+      setFormError("Customer name is required");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(trimmedCustomer.phone)) {
+      setFormError("Enter a valid 10 digit Indian mobile number");
+      return;
+    }
+    if (!trimmedCustomer.addressLine1) {
+      setFormError("Delivery address is required");
+      return;
+    }
+    if (!trimmedCustomer.city) {
+      setFormError("City is required");
+      return;
+    }
+    if (!trimmedCustomer.state) {
+      setFormError("State is required");
+      return;
+    }
+    if (!/^\d{6}$/.test(trimmedCustomer.pincode)) {
+      setFormError("Enter a valid 6 digit pincode");
+      return;
+    }
+
+    setFormError("");
     setIsBuying(true);
     try {
-      const productsData = cartItems.map((item) => ({
-        id: item._id,
-        name: item.product_name,
-        price: item.product_price,
+      const orderItems = cartItems.map((item) => ({
+        productId: item._id ?? item.id,
+        productName: item.product_name || item.name,
+        productPrice: item.product_price ?? item.price,
+        productImage: item.product_image?.[0] || item.image || "",
+        productSize: item.product_size || item.size,
         quantity: item.quantity || 1,
-        size: item.product_size,
-        image: item.product_image?.[0],
       }));
 
-      const message = createWhatsAppMessage(productsData);
-      const phoneNumber = "917028996666";
-      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-        message
-      )}`;
+      const response = await fetch(buildApiUrl("/api/orders/cod"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: orderItems, customer: trimmedCustomer }),
+      });
 
-      const saveSuccess = savePurchasedProducts(cartItems);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create your COD order");
+      }
+
+      const order = data.order;
+      saveStoredCodOrder(order);
+
+      const saveSuccess = savePurchasedProducts(cartItems, order);
       if (!saveSuccess) throw new Error("Failed to save your purchase");
 
-      await fetch(
-        `${import.meta.env.VITE_BASE_URL_PRODUCTION}/api/checkout/increment`,
-        {
-          method: "POST",
-        }
-      );
+      await fetch(buildApiUrl("/api/checkout/increment"), {
+        method: "POST",
+      });
 
-      window.open(whatsappURL, "_blank");
       clearCart();
-      navigate("/your-products");
+      navigate(`/order-confirmation/${order.trackingCode}`);
     } catch (err) {
-      console.error("Error preparing WhatsApp message:", err);
-      alert("Failed to prepare your order. Please try again.");
+      console.error("Error creating COD order:", err);
+      alert(err.message || "Failed to create your COD order. Please try again.");
     } finally {
       setIsBuying(false);
     }
   };
 
-  const createWhatsAppMessage = (products) => {
-    const total = products.reduce(
-      (sum, p) => sum + p.price * (p.quantity || 1),
-      0
-    );
-    const messageId = generateMessageId();
-
-    let message = `*Purchase Inquiry - ${messageId}*\n\nHello! I'm interested in buying the following products:\n`;
-
-    products.forEach((product, index) => {
-      message += `\n*${index + 1}. ${product.name}*\n`;
-      message += `Size: ${product.size || "N/A"}\n`;
-      message += `Price: ${formatPrice(product.price)} x ${
-        product.quantity || 1
-      }\n`;
-      message += `Subtotal: ${formatPrice(
-        product.price * (product.quantity || 1)
-      )}\n`;
-      if (product.image) {
-        message += `Image: ${product.image}\n`;
-      }
-    });
-
-    message += `\n*Total Items:* ${products.length}`;
-    message += `\n*Total Amount:* ${formatPrice(total)}\n`;
-    message += `\nKindly confirm availability and payment instructions.\n`;
-
-    return message;
-  };
-
-  const generateMessageId = () => {
-    return `ORDER-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
-  };
-
   const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(price);
+    return formatOrderPrice(price);
   };
 
   const calculateTotal = () => {
     return cartItems.reduce(
-      (total, item) => total + item.product_price * (item.quantity || 1),
+      (total, item) =>
+        total + Number(item.product_price ?? item.price ?? 0) * (item.quantity || 1),
       0
     );
   };
@@ -178,7 +198,7 @@ const Cart = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          Looks like you haven't added anything to your cart yet. Start shopping
+          Looks like you have not added anything to your cart yet. Start shopping
           to see items here.
         </motion.p>
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
@@ -225,7 +245,7 @@ const Cart = () => {
             <AnimatePresence>
               {cartItems.map((item) => (
                 <motion.div
-                  key={item._id}
+                  key={item._id ?? item.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -50 }}
@@ -234,33 +254,35 @@ const Cart = () => {
                   className="rounded-lg shadow-sm border border-gray-100 p-3 flex gap-3 hover:shadow-md bg-white"
                 >
                   <Link
-                    to={`/product-details/${item._id}`}
+                    to={`/product-details/${item._id ?? item.id}`}
                     className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24"
                   >
                     <motion.img
                       whileHover={{ scale: 1.05 }}
                       src={
-                        item.product_image?.[0].replace(
-                          "/upload/",
-                          "/upload/w_400,q_auto,f_auto/"
-                        ) || "/placeholder-image.jpg"
+                        item.product_image?.[0]
+                          ? item.product_image[0].replace(
+                              "/upload/",
+                              "/upload/w_400,q_auto,f_auto/"
+                            )
+                          : "/placeholder-image.jpg"
                       }
                       loading="lazy"
-                      alt={item.product_name}
+                      alt={item.product_name || item.name || "Product"}
                       className="w-full h-full rounded-lg object-cover"
                     />
                   </Link>
                   <div className="flex-1 flex flex-col">
                     <h2 className="text-lg sm:text-xl font-normal text-gray-800 line-clamp-2">
-                      {item.product_name}
+                      {item.product_name || item.name}
                     </h2>
                     <p className="text-orange-600 font-bold mt-1 text-sm sm:text-base">
-                      {formatPrice(item.product_price)}
+                      {formatPrice(item.product_price ?? item.price)}
                     </p>
                     {/* Quantity controls */}
                     <div className="flex items-center gap-2 mt-2">
                       <button
-                        onClick={() => decreaseQuantity(item._id)}
+                        onClick={() => decreaseQuantity(item._id ?? item.id)}
                         className="text-gray-600 hover:text-red-500"
                       >
                         <FiMinusCircle className="w-5 h-5" />
@@ -269,7 +291,7 @@ const Cart = () => {
                         {item.quantity || 1}
                       </span>
                       <button
-                        onClick={() => increaseQuantity(item._id)}
+                        onClick={() => increaseQuantity(item._id ?? item.id)}
                         className="text-gray-600 hover:text-green-500"
                       >
                         <FiPlusCircle className="w-5 h-5" />
@@ -278,7 +300,7 @@ const Cart = () => {
                     <div className="mt-auto flex justify-end">
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => removeFromCart(item._id)}
+                        onClick={() => removeFromCart(item._id ?? item.id)}
                         className="flex items-center gap-1 bg-red-400 hover:bg-red-500 text-white px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium rounded"
                       >
                         <FiTrash2 className="text-sm" />
@@ -313,6 +335,112 @@ const Cart = () => {
                 </span>
               </div>
               <div className="border-t border-gray-200 my-2"></div>
+              <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <div>
+                  <p className="text-sm font-medium text-amber-900">
+                    Delivery Details
+                  </p>
+                  <p className="text-xs text-amber-800">
+                    Required before placing a COD order.
+                  </p>
+                </div>
+
+                <input
+                  value={customer.fullName}
+                  onChange={(event) =>
+                    setCustomer((current) => ({
+                      ...current,
+                      fullName: event.target.value,
+                    }))
+                  }
+                  placeholder="Full name"
+                  className="w-full rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                />
+                <input
+                  value={customer.phone}
+                  onChange={(event) =>
+                    setCustomer((current) => ({
+                      ...current,
+                      phone: event.target.value,
+                    }))
+                  }
+                  placeholder="Mobile number"
+                  inputMode="numeric"
+                  maxLength={10}
+                  className="w-full rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                />
+                <textarea
+                  value={customer.addressLine1}
+                  onChange={(event) =>
+                    setCustomer((current) => ({
+                      ...current,
+                      addressLine1: event.target.value,
+                    }))
+                  }
+                  placeholder="Address line 1"
+                  rows={2}
+                  className="w-full resize-none rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                />
+                <input
+                  value={customer.addressLine2}
+                  onChange={(event) =>
+                    setCustomer((current) => ({
+                      ...current,
+                      addressLine2: event.target.value,
+                    }))
+                  }
+                  placeholder="Address line 2 (optional)"
+                  className="w-full rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <input
+                    value={customer.city}
+                    onChange={(event) =>
+                      setCustomer((current) => ({
+                        ...current,
+                        city: event.target.value,
+                      }))
+                    }
+                    placeholder="City"
+                    className="w-full rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                  />
+                  <input
+                    value={customer.state}
+                    onChange={(event) =>
+                      setCustomer((current) => ({
+                        ...current,
+                        state: event.target.value,
+                      }))
+                    }
+                    placeholder="State"
+                    className="w-full rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                  />
+                </div>
+                <input
+                  value={customer.pincode}
+                  onChange={(event) =>
+                    setCustomer((current) => ({
+                      ...current,
+                      pincode: event.target.value,
+                    }))
+                  }
+                  placeholder="Pincode"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="w-full rounded border border-amber-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                />
+                {formError && (
+                  <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {formError}
+                  </p>
+                )}
+              </div>
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                <p className="text-sm font-medium text-amber-900">
+                  Payment Method
+                </p>
+                <p className="text-sm text-amber-800">Cash on Delivery</p>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-lg sm:text-xl font-normal">Total</span>
                 <span className="text-orange-600 font-bold text-lg sm:text-xl">
@@ -338,12 +466,12 @@ const Cart = () => {
               </motion.span>
               {isBuying
                 ? "Processing..."
-                : `Checkout (${cartItems.length} ${
+                : `Place COD Order (${cartItems.length} ${
                     cartItems.length > 1 ? "items" : "item"
                   })`}
             </motion.button>
             <p className="text-xs text-gray-500 mt-3 text-center">
-              You'll complete your purchase on WhatsApp
+              Your delivery details are saved with this COD order for dispatch.
             </p>
           </motion.div>
         </div>
@@ -365,7 +493,7 @@ const Cart = () => {
             className="bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg font-medium flex items-center gap-2 text-sm"
           >
             <FaCartArrowDown />
-            {isBuying ? "Processing..." : "Checkout"}
+            {isBuying ? "Processing..." : "Place COD Order"}
           </motion.button>
         </div>
       </div>

@@ -10,6 +10,7 @@ import AnimatedUnderline from "../AnimatedUnderline/AnimatedUnderline";
 import { useMemo } from "react";
 import { fetchCachedJson, setCachedData } from "../../lib/api";
 import { getOptimizedImage } from "../../lib/media";
+import { useCart } from "../../Contexts/Contexts";
 
 const AllProducts = () => {
   useEffect(() => {
@@ -30,6 +31,7 @@ const AllProducts = () => {
   const [viewMode, setViewMode] = useState("masonry");
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   useEffect(() => {
     if (category) {
@@ -43,27 +45,56 @@ const AllProducts = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const data = await fetchCachedJson("/api/products", {
+
+        const response = await fetchCachedJson("/api/products", {
           cacheKey: "products:list",
           ttlMs: 5 * 60 * 1000,
         });
+
+        const data = Array.isArray(response)
+          ? response
+          : response?.products || response?.data || [];
+
+        console.log(data, "data");
 
         const productsWithExtras = data
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .map((product) => ({
             ...product,
-            isFavorite: false,
-            category: product.product_category || "Uncategorized",
+
+            // Convert your PostgreSQL API fields into fields used by this component
+            _id: product._id || product.id,
+            product_name: product.product_name || product.name || "",
+            product_price:
+              Number(product.product_price ?? product.price) || 0,
+            product_size: product.product_size || product.size || "0",
+            product_description:
+              product.product_description || product.description || "",
+            product_category:
+              product.product_category || product.category || "Uncategorized",
+            product_discount:
+              Number(product.product_discount ?? product.discount) || 0,
+
+            product_image:
+              Array.isArray(product.product_image) &&
+              product.product_image.length > 0
+                ? product.product_image
+                : ["/placeholder-product.png"],
+
+            category:
+              product.product_category || product.category || "Uncategorized",
             rating: product.product_rating || Math.random() * 1 + 4,
+            isFavorite: false,
             isNew:
+              product.createdAt &&
               Date.now() - new Date(product.createdAt).getTime() < 604800000,
           }));
 
         setProducts(productsWithExtras);
         setCachedData("products:list", productsWithExtras);
-        setLoading(false);
       } catch (error) {
-        console.error(error);
+        console.error("Product fetch error:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -110,7 +141,7 @@ const AllProducts = () => {
           p.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.product_description
             .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+            .includes(searchQuery.toLowerCase()),
       )
       .sort((a, b) => {
         if (sortOption === "price-low")
@@ -125,8 +156,8 @@ const AllProducts = () => {
   const toggleFavorite = (productId) => {
     setProducts((prev) =>
       prev.map((p) =>
-        p._id === productId ? { ...p, isFavorite: !p.isFavorite } : p
-      )
+        p._id === productId ? { ...p, isFavorite: !p.isFavorite } : p,
+      ),
     );
   };
 
@@ -289,7 +320,7 @@ const AllProducts = () => {
                               navigate("/products");
                             } else {
                               navigate(
-                                `/products/category/${encodeURIComponent(cat)}`
+                                `/products/category/${encodeURIComponent(cat)}`,
                               );
                             }
                           }}
@@ -389,7 +420,10 @@ const AllProducts = () => {
                           <div className="relative overflow-hidden">
                             <div className="h-60 overflow-hidden bg-amber-50 flex items-center justify-center">
                               <motion.img
-                                src={getOptimizedImage(product.product_image[0], "card")}
+                                src={getOptimizedImage(
+                                  product.product_image[0],
+                                  "card",
+                                )}
                                 alt={product.product_name}
                                 className="max-h-56 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
                                 loading="lazy"
@@ -469,7 +503,7 @@ const AllProducts = () => {
                                 className="flex items-center gap-1 px-3 py-2 text-sm font-medium bg-amber-600 text-white rounded-lg transition hover:bg-amber-700"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  // Add to cart functionality
+                                  addToCart(product);
                                 }}
                               >
                                 <ShoppingCart size={16} />
@@ -500,7 +534,10 @@ const AllProducts = () => {
                       <div className="relative overflow-hidden">
                         <div className="h-52 overflow-hidden bg-amber-50 flex items-center justify-center">
                           <motion.img
-                            src={getOptimizedImage(product.product_image[0], "card")}
+                            src={getOptimizedImage(
+                              product.product_image[0],
+                              "card",
+                            )}
                             alt={product.product_name}
                             className="max-h-48 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
                             loading="lazy"
@@ -543,7 +580,7 @@ const AllProducts = () => {
                             className="flex items-center gap-1 px-3 py-2 text-sm font-medium bg-amber-600 text-white rounded-lg transition hover:bg-amber-700"
                             onClick={(e) => {
                               e.preventDefault();
-                              // Add to cart functionality
+                              addToCart(product);
                             }}
                           >
                             <ShoppingCart size={16} />

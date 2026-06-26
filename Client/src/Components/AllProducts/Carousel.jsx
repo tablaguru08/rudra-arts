@@ -6,6 +6,17 @@ import { useNavigate } from "react-router-dom";
 import { fetchCachedJson } from "../../lib/api";
 import { getOptimizedImage } from "../../lib/media";
 
+const normalizeProduct = (product) => ({
+  ...product,
+  _id: String(product._id ?? product.id ?? ""),
+  product_name: product.product_name || product.name || "",
+  product_price: Number(product.product_price ?? product.price) || 0,
+  product_image:
+    Array.isArray(product.product_image) && product.product_image.length > 0
+      ? product.product_image
+      : ["/placeholder-image.jpg"],
+});
+
 export default function LatestProducts() {
   const [products, setProducts] = useState([]);
   const navigate = useNavigate();
@@ -17,10 +28,15 @@ export default function LatestProducts() {
           cacheKey: "products:list",
           ttlMs: 5 * 60 * 1000,
         });
-        const sortedProducts = data.sort(
-          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-        );
-        setProducts(sortedProducts.slice(0, 4)); // Get first 4 newest products
+        const productsData = Array.isArray(data)
+          ? data
+          : data?.products || data?.data || [];
+        const sortedProducts = productsData
+          .map(normalizeProduct)
+          .sort(
+            (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+          );
+        setProducts(sortedProducts.slice(0, 4));
       } catch (err) {
         console.error("Failed to fetch products", err);
       }
@@ -33,7 +49,6 @@ export default function LatestProducts() {
 
   return (
     <div className="w-full py-12 bg-transparent">
-      {/* Title */}
       <h2 className="text-3xl font-normal font-times text-customBrown mb-8 px-8 pt-5">
         Latest Products
       </h2>
@@ -54,24 +69,22 @@ export default function LatestProducts() {
                   "/placeholder-image.jpg"
                 }
                 loading="lazy"
-                alt={product.product_name}
+                alt={product.product_name || "Product"}
                 className="w-full h-48 object-cover"
                 onError={(e) => {
                   e.target.src = "/placeholder-image.jpg";
                 }}
               />
 
-              {/* Info overlay */}
               <div className="p-4">
                 <h3 className="font-semibold text-lg text-gray-800 mb-1 truncate">
                   {product.product_name}
                 </h3>
                 <p className="text-orange-500 font-bold text-lg">
-                  ₹{product.product_price.toLocaleString()}
+                  ₹{product.product_price.toLocaleString("en-IN")}
                 </p>
               </div>
 
-              {/* New badge */}
               <div className="absolute top-4 right-4 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
                 New
               </div>

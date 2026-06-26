@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Element } from "react-scroll";
 import Home from "./Components/Home/Home";
 import AboutUs from "./Components/About/About";
@@ -38,6 +38,10 @@ import HeritageExperience from "./Components/HeritageExperience/HeritageExperien
 import AwardsComponent from "./Components/AwardsComponent/AwardsComponent";
 import YourProducts from "./Components/Cart/YourProducts";
 import FooterPlate from "./Components/FooterPlate/FooterPlate";
+import TermsAndCondition from "./Components/TermsAndCondition/TermsAndCondition";
+import OrderConfirmation from "./Components/Orders/OrderConfirmation";
+import TrackOrder from "./Components/Orders/TrackOrder";
+import OrdersManager from "./Components/Dashboard/OrdersManager";
 
 const App = () => {
   const location = useLocation();
@@ -133,6 +137,14 @@ const App = () => {
         <Route path="/maharaj" element={<HeritageExperience />} />
         <Route path="/awards" element={<AwardsComponent />} />
         <Route path="/your-products" element={<YourProducts />} />
+        <Route
+          path="/order-confirmation/:trackingCode"
+          element={<OrderConfirmation />}
+        />
+        <Route path="/track-order" element={<TrackOrder />} />
+        <Route path="/track-order/:trackingCode" element={<TrackOrder />} />
+        <Route path="/terms-and-condition" element={<TermsAndCondition />} />
+        <Route path="/terms-and-conditions" element={<TermsAndCondition />} />
 
         <Route
           path="/admin/dashboard"
@@ -195,6 +207,14 @@ const App = () => {
           element={
             <PrivateRoute>
               <BlogChecker />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <PrivateRoute>
+              <OrdersManager />
             </PrivateRoute>
           }
         />

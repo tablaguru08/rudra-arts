@@ -13,6 +13,7 @@ import {
   PenLine,
   Edit3,
   ClipboardList,
+  Truck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaBlog } from "react-icons/fa";
@@ -47,6 +48,11 @@ const Sidebar = () => {
       label: "Blog Checker",
       icon: <ClipboardList size={20} />,
       to: "/admin/blog-checker",
+    },
+    {
+      label: "COD Orders",
+      icon: <Truck size={20} />,
+      to: "/admin/orders",
     },
   ];
 

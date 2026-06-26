@@ -12,6 +12,7 @@ import {
   Settings,
   UserCheck,
   ShoppingCart,
+  Truck,
 } from "lucide-react";
 import DashboardLayout from "../Dashboard/DashboardLayout";
 import { Link } from "react-router-dom";
@@ -26,6 +27,7 @@ const Dashboard = () => {
     { Icon: Newspaper, label: "News", to: "/admin/news" },
     { Icon: Edit, label: "Blogs", to: "/admin/blog" },
     { Icon: Check, label: "Blog Checker", to: "/admin/blog-checker" },
+    { Icon: Truck, label: "COD Orders", to: "/admin/orders" },
   ];
 
   // Fetch checkout stats on mount

@@ -55,6 +55,8 @@ const Navbar = () => {
     { name: "Wall of Fame", path: "/lorem" },
     { name: "Franchise", path: "/franchises" },
     { name: "Our Team", path: "/ourteam" },
+    { name: "Track Order", path: "/track-order" },
+    { name: "Terms & Conditions", path: "/terms-and-condition" },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -77,17 +79,26 @@ const Navbar = () => {
     const updatePurchasedCount = () => {
       const purchasedProducts =
         JSON.parse(localStorage.getItem("purchasedProducts")) || [];
-      setPurchasedCount(purchasedProducts.length);
+      const codOrders = JSON.parse(localStorage.getItem("codOrders")) || [];
+      const legacyProducts = purchasedProducts.filter(
+        (product) => !product.trackingCode
+      );
+      setPurchasedCount(codOrders.length + legacyProducts.length);
     };
 
-    // Initial load
     updatePurchasedCount();
 
-    // Listen for storage changes
     window.addEventListener("storage", updatePurchasedCount);
+    window.addEventListener("codOrdersUpdated", updatePurchasedCount);
+    window.addEventListener("purchasedProductsUpdated", updatePurchasedCount);
 
     return () => {
       window.removeEventListener("storage", updatePurchasedCount);
+      window.removeEventListener("codOrdersUpdated", updatePurchasedCount);
+      window.removeEventListener(
+        "purchasedProductsUpdated",
+        updatePurchasedCount
+      );
     };
   }, []);
 
@@ -123,7 +134,7 @@ const Navbar = () => {
                     />
                     {!isMobile && (
                       <p className="ml-2 text-xl font-times font-normal">
-                        Rudra Arts & Handicrafts
+                        Rudra Arts & Handicrafts LLP
                       </p>
                     )}
                   </Link>
