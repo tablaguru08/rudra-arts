@@ -55,7 +55,7 @@ const Navbar = () => {
     { name: "Wall of Fame", path: "/lorem" },
     { name: "Franchise", path: "/franchises" },
     { name: "Our Team", path: "/ourteam" },
-    { name: "Track Order", path: "/track-order" },
+    // { name: "Track Order", path: "/track-order" },
     { name: "Terms & Conditions", path: "/terms-and-condition" },
     { name: "Contact", path: "/contact" },
   ];
@@ -81,7 +81,7 @@ const Navbar = () => {
         JSON.parse(localStorage.getItem("purchasedProducts")) || [];
       const codOrders = JSON.parse(localStorage.getItem("codOrders")) || [];
       const legacyProducts = purchasedProducts.filter(
-        (product) => !product.trackingCode
+        (product) => !product.trackingCode,
       );
       setPurchasedCount(codOrders.length + legacyProducts.length);
     };
@@ -97,7 +97,7 @@ const Navbar = () => {
       window.removeEventListener("codOrdersUpdated", updatePurchasedCount);
       window.removeEventListener(
         "purchasedProductsUpdated",
-        updatePurchasedCount
+        updatePurchasedCount,
       );
     };
   }, []);
@@ -165,6 +165,13 @@ const Navbar = () => {
                         {purchasedCount}
                       </span>
                     )}
+                  </Link>
+                  <Link
+                    to="/track-order"
+                    className="relative p-2 rounded-full hover:bg-gray-100 hover:bg-opacity-10 transition-colors"
+                    aria-label="Track Order"
+                  >
+                    Track Order
                   </Link>
                   <button
                     onClick={() => setIsOpen(!isOpen)}
