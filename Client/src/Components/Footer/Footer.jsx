@@ -101,8 +101,7 @@ const Footer = () => {
             Contact Us
           </h3>
           <p className="text-white mt-4">
-            Famous Chowk, Kirti Nagar Lane No. 1, Ganesh Nagar, Samata Nagar,
-            New Sangavi, Pune, Pimpri-Chinchwad, Maharashtra 411027
+            SNO.73/11 SHIVSAI RESIDECY PIMPLE GURAV BLD.A FL-302 PUNE 411061
           </p>
           <a
             href="https://wa.me/917028996666"
