@@ -37,7 +37,7 @@ const Login = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -68,7 +68,7 @@ const Login = () => {
         className="w-full max-w-md backdrop-blur-lg bg-black/10 border border-white/30 rounded-xl shadow-xl p-8 text-black"
       >
         <h2 className="text-4xl text-white font-bold text-center mb-6 drop-shadow text-montserrat">
-          Rudra Arts & Handicrafts Login
+          Rudra Arts & Handicrafts LLP Login
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">

@@ -33,7 +33,7 @@ const AboutUs = () => {
               className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10"
             />
             <AnimatedUnderline>
-              The Story Behind Rudra Arts & Handicrafts
+              The Story Behind Rudra Arts & Handicrafts LLP
             </AnimatedUnderline>
             <img
               src="/images/dhaltalwar.png"
@@ -68,13 +68,13 @@ const AboutUs = () => {
                 {title === "The Beginning"
                   ? "Rooted in deep cultural passion, Rudra Arts & Handicrafts began its journey to revive the legacy of traditional weaponry—fusing timeless craftsmanship with a modern outlook."
                   : title === "The Evolution"
-                  ? "With time, our vision expanded. We now craft cultural artifacts and regal creations that reflect both artistic integrity and historical authenticity."
-                  : title === "Legacy of Art"
-                  ? "Each piece reflects the soul of Indian heritage—carefully curated with precision, pride, and the timeless skills passed through generations."
-                  : "We aim to preserve and promote this cultural heritage globally, offering handcrafted excellence while embracing evolving aesthetics."}
+                    ? "With time, our vision expanded. We now craft cultural artifacts and regal creations that reflect both artistic integrity and historical authenticity."
+                    : title === "Legacy of Art"
+                      ? "Each piece reflects the soul of Indian heritage—carefully curated with precision, pride, and the timeless skills passed through generations."
+                      : "We aim to preserve and promote this cultural heritage globally, offering handcrafted excellence while embracing evolving aesthetics."}
               </p>
             </motion.div>
-          )
+          ),
         )}
       </div>
     </div>
