@@ -43,7 +43,7 @@ const News = () => {
         ttlMs: 3 * 60 * 1000,
       });
       const filteredNews = (data.newsItems || []).filter(
-        (news) => !news.isHide
+        (news) => !news.isHide,
       );
       setNewsData(filteredNews.reverse());
     } catch (err) {
@@ -83,7 +83,7 @@ const News = () => {
                 className="w-8 h-8 sm:w-10 sm:h-10"
               />
               <AnimatedUnderline>
-                Rudra Arts & Handicrafts News
+                Rudra Arts & Handicrafts LLP News
               </AnimatedUnderline>
               <img
                 src="/images/dhaltalwar.png"
