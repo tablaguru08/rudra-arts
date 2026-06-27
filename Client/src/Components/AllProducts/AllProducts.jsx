@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaHeart, FaRegHeart, FaStar, FaSearch, FaTimes } from "react-icons/fa";
-import { ShoppingCart, Filter, Grid, Layout, Sliders } from "lucide-react";
+import { FaHeart, FaRegHeart, FaSearch, FaTimes } from "react-icons/fa";
+import { ShoppingCart, Grid, Layout, Sliders } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AutoScrollCarousel from "./Carousel";
 import aboutBg from "../../assets/images/about-bg.jpg";
 import { Skeleton } from "@mui/material";
-import AnimatedUnderline from "../AnimatedUnderline/AnimatedUnderline";
 import { useMemo } from "react";
 import { fetchCachedJson, setCachedData } from "../../lib/api";
 import { getOptimizedImage } from "../../lib/media";
 import { useCart } from "../../Contexts/Contexts";
+import {
+  PUBLIC_PRODUCT_CATEGORIES,
+  filterPublicProducts,
+  isPublicProductCategory,
+  normalizeProductCategory,
+} from "../../lib/productVisibility";
 
 const AllProducts = () => {
   useEffect(() => {
@@ -35,11 +40,16 @@ const AllProducts = () => {
 
   useEffect(() => {
     if (category) {
-      setSelectedCategory(category);
+      if (isPublicProductCategory(category)) {
+        setSelectedCategory(category);
+      } else {
+        setSelectedCategory("All");
+        navigate("/products", { replace: true });
+      }
     } else {
       setSelectedCategory("All");
     }
-  }, [category]);
+  }, [category, navigate]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -57,7 +67,7 @@ const AllProducts = () => {
 
         console.log(data, "data");
 
-        const productsWithExtras = data
+        const productsWithExtras = filterPublicProducts(data)
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .map((product) => ({
             ...product,
@@ -102,39 +112,16 @@ const AllProducts = () => {
     fetchProducts();
   }, []);
 
-  const categories = [
-    "All",
-    "Mavala",
-    "Maharaj",
-    "Shastra (Weapons)",
-    "Miniature Weapons",
-    "Miniatures",
-    "Spiritual Statues",
-    "Car Dashboard",
-    "Frame Collection",
-    "Shilekhana (Weapon Vault)",
-    "Symbolic & Cultural Artefacts",
-    "Sanch",
-    "Keychains",
-    "Jewellery",
-    "Historical Legends",
-    "Badges",
-    "Taxidermy",
-  ];
-
-  const normalize = (str) =>
-    str
-      ? str
-          .toLowerCase()
-          .replace(/\s+/g, "")
-          .replace(/[^a-z0-9]/g, "")
-      : "";
+  const categories = ["All", ...PUBLIC_PRODUCT_CATEGORIES];
 
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
         if (selectedCategory === "All") return true;
-        return normalize(p.category) === normalize(selectedCategory);
+        return (
+          normalizeProductCategory(p.category) ===
+          normalizeProductCategory(selectedCategory)
+        );
       })
       .filter(
         (p) =>
@@ -163,27 +150,6 @@ const AllProducts = () => {
 
   const loadMoreProducts = () => {
     setVisibleProducts((prev) => prev + 12);
-  };
-
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<FaStar key={`full-${i}`} className="text-amber-400" />);
-    }
-
-    if (hasHalfStar) {
-      stars.push(<FaStar key="half" className="text-amber-400 opacity-50" />);
-    }
-
-    const emptyStars = 5 - stars.length;
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<FaStar key={`empty-${i}`} className="text-gray-300" />);
-    }
-
-    return stars;
   };
 
   // Masonry layout columns
@@ -614,7 +580,7 @@ const AllProducts = () => {
               No products found
             </h3>
             <p className="text-amber-700 mb-6 max-w-md mx-auto">
-              Try adjusting your search or filter criteria to find what you're
+              Try adjusting your search or filter criteria to find what you&apos;re
               looking for.
             </p>
             <button

@@ -7,6 +7,7 @@ import { FaShoppingCart, FaBoxOpen } from "react-icons/fa";
 import logo from "../../assets/images/rudra_arts_logo_single.png";
 import { useMediaQuery } from "react-responsive";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { PUBLIC_PRODUCT_CATEGORIES } from "../../lib/productVisibility";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,26 +17,6 @@ const Navbar = () => {
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [purchasedCount, setPurchasedCount] = useState(0);
 
-  // Product categories
-  const productCategories = [
-    "Mavala",
-    "Maharaj",
-    "Shastra (Weapons)",
-    "Miniature Weapons",
-    "Miniatures",
-    "Spiritual Statues",
-    "Car Dashboard",
-    "Frame Collection",
-    "Shilekhana (Weapon Vault)",
-    "Symbolic & Cultural Artefacts",
-    "Sanch",
-    "Jewellery",
-    "Keychains",
-    "Historical Legends",
-    "Badges",
-    "Taxidermy",
-  ];
-
   const navItems = [
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
@@ -44,7 +25,7 @@ const Navbar = () => {
       path: "/products",
       dropdown: [
         { name: "All Products", path: "/products" },
-        ...productCategories.map((category) => ({
+        ...PUBLIC_PRODUCT_CATEGORIES.map((category) => ({
           name: category,
           path: `/products/category/${encodeURIComponent(category)}`,
         })),
